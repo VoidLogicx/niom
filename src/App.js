@@ -4,6 +4,7 @@ import Header from './components/common/Header';
 import Dashboard from './components/dashboard/Dashboard';
 import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
+import BiuroAI from './pages/modules/office';
 import './styles/globals.css';
 import './styles/dashboard.css';
 
@@ -19,7 +20,7 @@ function App() {
             <Route path="/logowanie" element={<LoginPage />} />
             
             {/* Placeholder routes for the dashboard modules */}
-            <Route path="/office" element={<h1>Biuro AI - Coming Soon</h1>} />
+            <Route path="/office" element={<BiuroAI />} />
             <Route path="/sales" element={<h1>Sprzedaż AI - Coming Soon</h1>} />
             <Route path="/client" element={<h1>Klient AI - Coming Soon</h1>} />
             <Route path="/logistics" element={<h1>Logistyka AI - Coming Soon</h1>} />
