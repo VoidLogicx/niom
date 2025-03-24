@@ -1,0 +1,5 @@
+/* Import global styles */
+@import './styles/globals.css';
+@import './styles/dashboard.css';
+
+/* Additional home page styles */
