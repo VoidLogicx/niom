@@ -7,6 +7,7 @@ import AIAssistant from './components/AIAssistant';
 import Templates from './components/Templates';
 import DocumentsPage from './components/DocumentsPage';
 import AIAssistantPage from './components/AIAssistantPage';
+import Settings from './components/Settings'; // Import the Settings component
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
@@ -17,6 +18,7 @@ function App() {
   ]);
   const [activeDocument, setActiveDocument] = useState(null);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [darkMode, setDarkMode] = useState(false); // Add darkMode state
 
   const handleCreateDocument = (title, initialContent = '') => {
     const newDoc = {
@@ -48,6 +50,10 @@ function App() {
 
   const handleToggleAIAssistant = () => {
     setShowAIAssistant(!showAIAssistant);
+  };
+
+  const handleToggleDarkMode = () => {
+    setDarkMode(!darkMode);
   };
 
   const handleAIGenerate = (prompt, type) => {
@@ -96,41 +102,56 @@ Dokument "${activeDocument.title}" reguluje zasady współpracy między stronami
   };
 
   return (
-    <div className="app">
+    <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
       <Sidebar 
         activePage={activePage} 
         setActivePage={setActivePage} 
         onCreateDocument={handleCreateDocument}
+        darkMode={darkMode}
       />
       <main className="main-content">
         {activePage === 'dashboard' && (
           <Dashboard 
             documents={documents} 
             onOpenDocument={handleOpenDocument} 
+            darkMode={darkMode}
           />
         )}
         {activePage === 'documentspage' && (
-          <DocumentsPage />
+          <DocumentsPage 
+            darkMode={darkMode}
+          />
         )}
         {activePage === 'templates' && (
           <Templates 
             onCreateDocument={handleCreateDocument} 
+            darkMode={darkMode}
           />
         )}
         {activePage === 'ai' && (
-          <AIAssistantPage />
+          <AIAssistantPage 
+            darkMode={darkMode}
+          />
+        )}
+        {activePage === 'settings' && (
+          <Settings 
+            darkMode={darkMode} 
+            onToggleDarkMode={handleToggleDarkMode}
+          />
         )}
         {activePage === 'editor' && activeDocument && (
           <DocumentEditor 
             document={activeDocument}
             onUpdateDocument={handleUpdateDocument}
             onToggleAIAssistant={handleToggleAIAssistant}
+            darkMode={darkMode}
           />
         )}
         {showAIAssistant && activeDocument && (
           <AIAssistant 
             onGenerate={handleAIGenerate} 
             onClose={handleToggleAIAssistant}
+            darkMode={darkMode}
           />
         )}
       </main>

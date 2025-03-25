@@ -1,4 +1,5 @@
-/* Dashboard.css */
+/* Dashboard.css - Comprehensive styling for Office AI Dashboard */
+
 :root {
     --primary-color: #4f46e5;
     --primary-hover: #4338ca;
@@ -21,20 +22,29 @@
     --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --transition-normal: all 0.2s ease;
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
   
+  /* General Dashboard Layout */
   .dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
   }
   
+  @media (max-width: 768px) {
+    .dashboard-container {
+      padding: 1rem;
+    }
+  }
+  
+  /* Dashboard Header */
   .dashboard-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
   
   .dashboard-header h1 {
-    font-size: 2rem;
+    font-size: 1.875rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: var(--text-color);
@@ -45,6 +55,7 @@
     max-width: 700px;
   }
   
+  /* Welcome Card */
   .welcome-card {
     display: flex;
     align-items: center;
@@ -55,6 +66,29 @@
     color: white;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .welcome-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--ai-purple) 100%);
+    opacity: 0.8;
+    z-index: 0;
+  }
+  
+  .welcome-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    z-index: 1;
+    opacity: 0.3;
   }
   
   .welcome-content {
@@ -88,6 +122,25 @@
     z-index: 1;
   }
   
+  @media (max-width: 768px) {
+    .welcome-card {
+      flex-direction: column;
+      text-align: center;
+      padding: 1.5rem;
+    }
+    
+    .welcome-image {
+      position: relative;
+      right: auto;
+      margin-top: 1.5rem;
+    }
+    
+    .welcome-buttons {
+      justify-content: center;
+    }
+  }
+  
+  /* Metrics Cards */
   .dashboard-metrics {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -102,6 +155,9 @@
     box-shadow: var(--card-shadow);
     transition: var(--transition-normal);
     border: 1px solid var(--border-color);
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+    opacity: 0;
   }
   
   .metric-card:hover {
@@ -171,6 +227,7 @@
     color: var(--danger-color);
   }
   
+  /* Main Content Grid */
   .dashboard-sections {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -183,6 +240,7 @@
     }
   }
   
+  /* Section Cards */
   .section-card {
     background-color: white;
     border-radius: 12px;
@@ -227,68 +285,79 @@
     margin-left: 0.25rem;
   }
   
+  /* Charts */
   .chart-container {
     height: 300px;
     position: relative;
   }
   
-  .usage-bars {
+  .chart-bar {
+    height: 200px;
     display: flex;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 1rem;
+    padding: 1rem 0;
+  }
+  
+  .bar-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .bar-value {
+    border-radius: 8px 8px 0 0;
+    width: 30px;
+    background-color: var(--primary-color);
+    transition: height 1s ease;
+    min-height: 4px;
+  }
+  
+  .bar-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+  }
+  
+  .chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
     margin-top: 1rem;
   }
   
-  .usage-bar {
-    flex: 1;
-    text-align: center;
-  }
-  
-  .usage-label {
+  .legend-item {
+    display: flex;
+    align-items: center;
     font-size: 0.875rem;
     color: var(--text-light);
-    margin-bottom: 0.5rem;
   }
   
-  .progress-bar {
-    height: 0.5rem;
-    background-color: var(--light-gray);
-    border-radius: 9999px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
+  .legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 0.5rem;
   }
   
-  .progress-fill {
-    height: 100%;
-    border-radius: 9999px;
-  }
-  
-  .progress-fill-primary {
+  .color-primary {
     background-color: var(--primary-color);
   }
   
-  .progress-fill-success {
+  .color-success {
     background-color: var(--success-color);
   }
   
-  .progress-fill-warning {
+  .color-warning {
     background-color: var(--warning-color);
   }
   
-  .progress-fill-danger {
-    background-color: var(--danger-color);
-  }
-  
-  .progress-fill-info {
+  .color-info {
     background-color: var(--info-color);
   }
   
-  .progress-value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-color);
-  }
-  
+  /* Documents and Activity Lists */
   .documents-list, .activity-list {
     display: flex;
     flex-direction: column;
@@ -298,6 +367,9 @@
     display: flex;
     padding: 1rem 0;
     border-bottom: 1px solid var(--border-color);
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+    opacity: 0;
   }
   
   .document-item:last-child, .activity-item:last-child {
@@ -354,6 +426,7 @@
     color: var(--primary-color);
   }
   
+  /* Status Badge */
   .status-badge {
     display: inline-flex;
     align-items: center;
@@ -383,6 +456,7 @@
     color: var(--danger-color);
   }
   
+  /* Quick Actions */
   .quick-actions {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -425,6 +499,7 @@
     color: var(--text-color);
   }
   
+  /* AI Suggestions */
   .ai-suggestions {
     margin-top: 1rem;
   }
@@ -437,6 +512,9 @@
     margin-bottom: 1rem;
     display: flex;
     align-items: flex-start;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+    opacity: 0;
   }
   
   .suggestion-card:last-child {
@@ -477,6 +555,7 @@
     gap: 0.75rem;
   }
   
+  /* Buttons */
   .btn {
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -518,6 +597,7 @@
     background-color: var(--secondary-color);
   }
   
+  /* Plan Usage */
   .plan-usage {
     margin-top: 1rem;
   }
@@ -588,120 +668,192 @@
     color: var(--text-color);
   }
   
-  .chart-legend {
+  /* Progress Bars */
+  .usage-bars {
     display: flex;
-    justify-content: center;
-    gap: 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
     margin-top: 1rem;
   }
   
-  .legend-item {
-    display: flex;
-    align-items: center;
+  .usage-bar {
+    flex: 1;
+  }
+  
+  .usage-label {
     font-size: 0.875rem;
     color: var(--text-light);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
   }
   
-  .legend-color {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    margin-right: 0.5rem;
+  .progress-bar {
+    height: 0.5rem;
+    background-color: var(--light-gray);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
   }
   
-  .color-primary {
+  .progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+  }
+  
+  .progress-fill-primary {
     background-color: var(--primary-color);
   }
   
-  .color-success {
+  .progress-fill-success {
     background-color: var(--success-color);
   }
   
-  .color-warning {
+  .progress-fill-warning {
     background-color: var(--warning-color);
   }
   
-  .color-info {
-    background-color: var(--info-color);
+  .progress-fill-danger {
+    background-color: var(--danger-color);
   }
   
-  .welcome-gradient {
-    position: absolute;
+  .progress-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  /* Empty States */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+  }
+  
+  .empty-text {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Modals */
+  .modal-backdrop {
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--ai-purple) 100%);
-    opacity: 0.8;
-    z-index: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
   }
   
-  .welcome-pattern {
-    position: absolute;
+  .modal {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: auto;
+  }
+  
+  .modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+  }
+  
+  .modal-footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+  
+  /* Loading/Processing States */
+  .loading-overlay {
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    z-index: 1;
-    opacity: 0.3;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
   }
   
-  /* Dark Mode Styles */
-  .dark-mode .metric-card,
-  .dark-mode .section-card,
-  .dark-mode .action-icon,
-  .dark-mode .usage-stat {
-    background-color: #1f2937;
-    border-color: #374151;
+  .loading-modal {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
   }
   
-  .dark-mode .dashboard-header h1,
-  .dark-mode .metric-title,
-  .dark-mode .metric-value,
-  .dark-mode .section-title,
-  .dark-mode .document-title,
-  .dark-mode .activity-title,
-  .dark-mode .suggestion-title,
-  .dark-mode .action-title,
-  .dark-mode .plan-title,
-  .dark-mode .stat-value {
-    color: #f3f4f6;
+  .loading-icon {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
   }
   
-  .dark-mode .dashboard-header p,
-  .dark-mode .document-meta,
-  .dark-mode .activity-meta,
-  .dark-mode .suggestion-text,
-  .dark-mode .stat-label,
-  .dark-mode .usage-label,
-  .dark-mode .plan-details {
-    color: #9ca3af;
+  .loading-text h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
   }
   
-  .dark-mode .action-card {
-    background-color: #111827;
+  .loading-text p {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
   }
   
-  .dark-mode .action-card:hover {
-    background-color: #374151;
+  .loading-progress {
+    width: 100%;
   }
   
-  .dark-mode .progress-bar,
-  .dark-mode .plan-progress-bar {
-    background-color: #374151;
+  .loading-bar {
+    height: 0.5rem;
+    background-color: var(--light-gray);
+    border-radius: 9999px;
+    overflow: hidden;
   }
   
-  .dark-mode .section-header {
-    border-color: #374151;
+  .loading-bar-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 9999px;
+    width: 0;
+    animation: loading 2s ease infinite;
   }
   
-  .dark-mode .document-item,
-  .dark-mode .activity-item {
-    border-color: #374151;
+  @keyframes loading {
+    0% {
+      width: 0;
+    }
+    50% {
+      width: 70%;
+    }
+    100% {
+      width: 100%;
+    }
   }
   
-  /* Animation for chart elements */
+  /* Animations */
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -713,42 +865,178 @@
     }
   }
   
-  .chart-animated {
-    animation: fadeIn 0.6s ease forwards;
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
   
-  .document-item, .activity-item, .metric-card, .suggestion-card {
-    animation: fadeIn 0.5s ease forwards;
-    animation-delay: calc(var(--index) * 0.1s);
-    opacity: 0;
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
   
-  /* Bar chart styles */
-  .chart-bar {
-    height: 200px;
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+  
+  /* AI Analysis Content */
+  .ai-analysis-panel {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: var(--card-shadow-hover);
+    z-index: 30;
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding: 1rem 0;
-  }
-  
-  .bar-column {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    width: 100%;
+    max-width: 300px;
+    border: 1px solid var(--primary-color);
   }
   
-  .bar-value {
-    border-radius: 8px 8px 0 0;
-    width: 30px;
-    background-color: var(--primary-color);
-    transition: height 1s ease;
-    min-height: 4px;
+  .analysis-header {
+    display: flex;
+    align-items: center;
+    color: var(--primary-color);
+    font-weight: 500;
   }
   
-  .bar-label {
-    font-size: 0.75rem;
-    color: var(--text-light);
-    margin-top: 0.5rem;
+  .analysis-header svg {
+    margin-right: 0.5rem;
+  }
+  
+  /* Template Cards */
+  .template-card {
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: var(--transition-normal);
+    cursor: pointer;
+  }
+  
+  .template-card:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
+  }
+  
+  .template-card.selected {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+  }
+  
+  /* Dark Mode Styles */
+  .dark-mode .metric-card,
+  .dark-mode .section-card,
+  .dark-mode .modal,
+  .dark-mode .loading-modal,
+  .dark-mode .ai-analysis-panel {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  
+  .dark-mode .secondary-color,
+  .dark-mode .action-card,
+  .dark-mode .usage-stat {
+    background-color: #111827;
+  }
+  
+  .dark-mode .action-icon {
+    background-color: #1f2937;
+  }
+  
+  .dark-mode .light-gray,
+  .dark-mode .progress-bar,
+  .dark-mode .plan-progress-bar,
+  .dark-mode .loading-bar {
+    background-color: #374151;
+  }
+  
+  .dark-mode .dashboard-header h1,
+  .dark-mode .metric-title,
+  .dark-mode .metric-value,
+  .dark-mode .section-title,
+  .dark-mode .document-title,
+  .dark-mode .activity-title,
+  .dark-mode .suggestion-title,
+  .dark-mode .action-title,
+  .dark-mode .plan-title,
+  .dark-mode .stat-value,
+  .dark-mode .modal-title,
+  .dark-mode .loading-text h3 {
+    color: #f3f4f6;
+  }
+  
+  .dark-mode .dashboard-header p,
+  .dark-mode .document-meta,
+  .dark-mode .activity-meta,
+  .dark-mode .suggestion-text,
+  .dark-mode .text-light,
+  .dark-mode .stat-label,
+  .dark-mode .usage-label,
+  .dark-mode .plan-details,
+  .dark-mode .loading-text p {
+    color: #9ca3af;
+  }
+  
+  .dark-mode .section-header,
+  .dark-mode .modal-header,
+  .dark-mode .modal-footer {
+    border-color: #374151;
+  }
+  
+  .dark-mode .document-item,
+  .dark-mode .activity-item {
+    border-color: #374151;
+  }
+  
+  .dark-mode input[type="text"],
+  .dark-mode input[type="email"],
+  .dark-mode input[type="password"],
+  .dark-mode select,
+  .dark-mode textarea {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+  
+  .dark-mode input[type="text"]::placeholder,
+  .dark-mode input[type="email"]::placeholder,
+  .dark-mode input[type="password"]::placeholder,
+  .dark-mode select::placeholder,
+  .dark-mode textarea::placeholder {
+    color: #9ca3af;
+  }
+  
+  .dark-mode .btn-outline {
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+  
+  .dark-mode .btn-outline:hover {
+    background-color: #374151;
+  }
+  
+  /* Responsive Utilities */
+  @media (max-width: 640px) {
+    .dashboard-metrics {
+      grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
