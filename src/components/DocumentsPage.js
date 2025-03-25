@@ -1,1491 +1,1391 @@
 import React, { useState, useEffect } from 'react';
-import { Tag, FileCheck, Sparkles } from 'lucide-react';
 import { 
-  FileText, Plus, Search, Filter, BrainCircuit, Zap, 
-  Clock, ArrowUpRight, Download, Share2, Copy, RefreshCw,
-  Users, Clipboard, BarChart2, MessageSquare, Check, 
-  Trash2, Edit, Eye, Star, Upload
+  FileText, 
+  FolderPlus, 
+  Search, 
+  Filter, 
+  SortAsc, 
+  Calendar, 
+  File, 
+  Trash2, 
+  Download, 
+  Share2, 
+  Copy, 
+  Edit, 
+  CheckCircle, 
+  Clock, 
+  AlertCircle, 
+  ArrowUpRight, 
+  Users, 
+  Star, 
+  Tag, 
+  ChevronRight, 
+  Menu, 
+  X, 
+  RefreshCw, 
+  Eye, 
+  Lock, 
+  Plus, 
+  Paperclip, 
+  ExternalLink, 
+  HelpCircle,
+  Zap,
+  BrainCircuit
 } from 'lucide-react';
-import '../css/DocumentsPage.css'
+import '../css/DocumentsPage.css';
 
-// Komponent główny strony dokumentów
-const DocumentsPage = () => {
-  // Stany
-  const [darkMode, setDarkMode] = useState(false);
+const DocumentsPage = ({ darkMode }) => {
+  // State management
   const [documents, setDocuments] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredDocuments, setFilteredDocuments] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedDocType, setSelectedDocType] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [isCreatingDoc, setIsCreatingDoc] = useState(false);
-  const [newDocTitle, setNewDocTitle] = useState('');
-  const [newDocType, setNewDocType] = useState('note');
-  const [selectedDocument, setSelectedDocument] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiInsights, setAiInsights] = useState(null);
-  const [sortOrder, setSortOrder] = useState('newest');
-  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [activeView, setActiveView] = useState('grid');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('modified');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [selectedDocs, setSelectedDocs] = useState([]);
-  const [showDocPreview, setShowDocPreview] = useState(false);
-  
-  // Mock typy dokumentów dla filtrowania
-  const documentTypes = [
-    { id: 'all', name: 'Wszystkie typy' },
-    { id: 'contract', name: 'Umowy' },
-    { id: 'report', name: 'Raporty' },
-    { id: 'note', name: 'Notatki' },
-    { id: 'proposal', name: 'Oferty' },
-    { id: 'letter', name: 'Listy' },
-    { id: 'invoice', name: 'Faktury' }
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [newDocumentName, setNewDocumentName] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [newDocumentType, setNewDocumentType] = useState('text');
+  const [showAIOptions, setShowAIOptions] = useState(false);
+  const [isDocumentAnalyzing, setIsDocumentAnalyzing] = useState(false);
+  const [documentAnalysis, setDocumentAnalysis] = useState(null);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [aiSuggestionOpen, setAiSuggestionOpen] = useState(false);
+  const [activeSuggestions, setActiveSuggestions] = useState([]);
+
+  // Mock document categories
+  const categories = [
+    { id: 'all', name: 'Wszystkie dokumenty', icon: <FileText size={16} /> },
+    { id: 'contracts', name: 'Umowy', icon: <File size={16} /> },
+    { id: 'reports', name: 'Raporty', icon: <FileText size={16} /> },
+    { id: 'letters', name: 'Korespondencja', icon: <FileText size={16} /> },
+    { id: 'templates', name: 'Szablony', icon: <Copy size={16} /> },
+    { id: 'shared', name: 'Udostępnione', icon: <Share2 size={16} /> },
+    { id: 'favorite', name: 'Ulubione', icon: <Star size={16} /> },
+    { id: 'trash', name: 'Kosz', icon: <Trash2 size={16} /> }
   ];
-  
-  // Mock statusy dokumentów
-  const documentStatuses = [
-    { id: 'all', name: 'Wszystkie statusy' },
-    { id: 'draft', name: 'Szkic' },
-    { id: 'review', name: 'Do przeglądu' },
-    { id: 'approved', name: 'Zatwierdzony' },
-    { id: 'published', name: 'Opublikowany' },
-    { id: 'rejected', name: 'Odrzucony' },
-    { id: 'archived', name: 'Zarchiwizowany' }
+
+  // Mock document templates
+  const documentTemplates = [
+    { id: 1, name: 'Umowa o pracę', category: 'contracts', icon: <File size={16} /> },
+    { id: 2, name: 'Umowa o dzieło', category: 'contracts', icon: <File size={16} /> },
+    { id: 3, name: 'Raport miesięczny', category: 'reports', icon: <FileText size={16} /> },
+    { id: 4, name: 'Raport kwartalny', category: 'reports', icon: <FileText size={16} /> },
+    { id: 5, name: 'List motywacyjny', category: 'letters', icon: <FileText size={16} /> },
+    { id: 6, name: 'Dokument pusty', category: 'templates', icon: <File size={16} /> }
   ];
-  
-  // Ładowanie danych początkowych
+
+  // Mock AI suggestions
+  const aiSuggestions = [
+    { id: 1, title: 'Zaktualizuj umowy', description: 'Niektóre umowy wymagają aktualizacji zgodnie z nowymi przepisami. Mogę pomóc w ich aktualizacji automatycznie.', action: 'update_contracts' },
+    { id: 2, title: 'Zorganizuj dokumenty', description: 'Zauważyłem, że masz wiele dokumentów bez kategorii. Chcesz, żebym je automatycznie skategoryzował?', action: 'organize_documents' },
+    { id: 3, title: 'Generuj raport miesięczny', description: 'Zbliża się koniec miesiąca. Chcesz wygenerować raport na podstawie danych z poprzednich miesięcy?', action: 'generate_report' }
+  ];
+
+  // Generate mock documents on component mount
   useEffect(() => {
-    // Symulacja wywołania API do załadowania dokumentów
-    const mockDocuments = [
-      {
-        id: 1,
-        title: 'Umowa z klientem XYZ - v2.0',
+    const mockDocuments = [];
+    
+    // Generate contracts
+    for (let i = 1; i <= 5; i++) {
+      mockDocuments.push({
+        id: i,
+        name: `Umowa z klientem ${i}`,
         type: 'contract',
-        status: 'approved',
-        createdAt: '21.03.2025',
-        lastModified: '22.03.2025',
+        category: 'contracts',
+        created: `${10 + i}.03.2025`,
+        modified: `${10 + i}.03.2025`,
+        size: `${100 + i * 20} KB`,
         author: 'Jan Kowalski',
-        aiGenerated: true,
-        wordCount: 1850,
-        views: 7,
-        tags: ['umowa', 'ważne', 'klient']
-      },
-      {
-        id: 2,
-        title: 'Raport kwartalny - Q1 2025',
+        status: i % 3 === 0 ? 'pending' : (i % 2 === 0 ? 'approved' : 'draft'),
+        tags: ['umowa', 'klient', 'ważne'],
+        favorite: i === 2,
+        aiGenerated: i % 2 === 0,
+        shared: i === 1 || i === 3,
+        icon: <File size={20} className="text-blue-500" />
+      });
+    }
+    
+    // Generate reports
+    for (let i = 6; i <= 10; i++) {
+      mockDocuments.push({
+        id: i,
+        name: `Raport Q${i-5} 2025`,
         type: 'report',
-        status: 'review',
-        createdAt: '19.03.2025',
-        lastModified: '20.03.2025',
+        category: 'reports',
+        created: `${i}.03.2025`,
+        modified: `${i+2}.03.2025`,
+        size: `${200 + i * 30} KB`,
         author: 'Anna Nowak',
-        aiGenerated: true,
-        wordCount: 3420,
-        views: 12,
-        tags: ['raport', 'finanse', 'kwartalny']
-      },
-      {
-        id: 3,
-        title: 'Notatka ze spotkania strategicznego',
-        type: 'note',
-        status: 'draft',
-        createdAt: '18.03.2025',
-        lastModified: '18.03.2025',
-        author: 'Piotr Wiśniewski',
-        aiGenerated: false,
-        wordCount: 550,
-        views: 3,
-        tags: ['spotkanie', 'strategia']
-      },
-      {
-        id: 4,
-        title: 'Oferta współpracy z firmą ABC',
-        type: 'proposal',
-        status: 'published',
-        createdAt: '15.03.2025',
-        lastModified: '17.03.2025',
-        author: 'Jan Kowalski',
-        aiGenerated: true,
-        wordCount: 1250,
-        views: 8,
-        tags: ['oferta', 'współpraca', 'ważne']
-      },
-      {
-        id: 5,
-        title: 'Faktura VAT - marzec 2025',
-        type: 'invoice',
-        status: 'approved',
-        createdAt: '16.03.2025',
-        lastModified: '16.03.2025',
-        author: 'System',
-        aiGenerated: false,
-        wordCount: 320,
-        views: 5,
-        tags: ['faktura', 'finanse']
-      },
-      {
-        id: 6,
-        title: 'List intencyjny - Projekt Innowacja',
+        status: i % 3 === 0 ? 'pending' : (i % 2 === 0 ? 'approved' : 'draft'),
+        tags: ['raport', 'kwartalny', 'finanse'],
+        favorite: i === 7,
+        aiGenerated: i % 3 === 0,
+        shared: i === 8,
+        icon: <FileText size={20} className="text-green-500" />
+      });
+    }
+    
+    // Generate letters
+    for (let i = 11; i <= 15; i++) {
+      mockDocuments.push({
+        id: i,
+        name: `List do klienta ${i-10}`,
         type: 'letter',
-        status: 'published',
-        createdAt: '12.03.2025',
-        lastModified: '14.03.2025',
-        author: 'Anna Nowak',
-        aiGenerated: true,
-        wordCount: 720,
-        views: 9,
-        tags: ['projekt', 'innowacja']
-      },
-      {
-        id: 7,
-        title: 'Raport z badań rynkowych',
-        type: 'report',
-        status: 'draft',
-        createdAt: '10.03.2025',
-        lastModified: '11.03.2025',
+        category: 'letters',
+        created: `${i-5}.03.2025`,
+        modified: `${i-2}.03.2025`,
+        size: `${50 + i * 10} KB`,
         author: 'Piotr Wiśniewski',
-        aiGenerated: true,
-        wordCount: 2800,
-        views: 2,
-        tags: ['badania', 'rynek', 'analiza']
-      }
-    ];
-    
-    setDocuments(mockDocuments);
-    
-    // Ustawienie ciemnego trybu na podstawie preferencji systemu
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setDarkMode(true);
-    }
-  }, []);
-  
-  // Obsługa tworzenia dokumentu
-  const handleCreateDocument = () => {
-    if (isCreatingDoc && newDocTitle.trim()) {
-      // Dodanie nowego dokumentu
-      const newDoc = {
-        id: documents.length + 1,
-        title: newDocTitle,
-        type: newDocType,
-        status: 'draft',
-        createdAt: new Date().toLocaleDateString('pl-PL'),
-        lastModified: new Date().toLocaleDateString('pl-PL'),
-        author: 'Jan Kowalski', // Aktualny użytkownik
+        status: i % 3 === 0 ? 'pending' : (i % 2 === 0 ? 'approved' : 'draft'),
+        tags: ['list', 'korespondencja'],
+        favorite: false,
         aiGenerated: false,
-        wordCount: 0,
-        views: 0,
-        tags: []
-      };
+        shared: i === 15,
+        icon: <FileText size={20} className="text-yellow-500" />
+      });
+    }
+
+    setDocuments(mockDocuments);
+    setFilteredDocuments(mockDocuments);
+    
+    // Simulate AI suggestions being activated after load
+    setTimeout(() => {
+      setAiSuggestionOpen(true);
+      setActiveSuggestions([aiSuggestions[0]]);
+    }, 2000);
+  }, []);
+
+  // Filter documents based on selected category and search query
+  useEffect(() => {
+    let filtered = [...documents];
+    
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'favorite') {
+        filtered = filtered.filter(doc => doc.favorite);
+      } else if (selectedCategory === 'shared') {
+        filtered = filtered.filter(doc => doc.shared);
+      } else if (selectedCategory === 'trash') {
+        // Not implemented in this mock
+        filtered = [];
+      } else {
+        filtered = filtered.filter(doc => doc.category === selectedCategory);
+      }
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(doc => 
+        doc.name.toLowerCase().includes(query) || 
+        doc.author.toLowerCase().includes(query) || 
+        doc.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    // Sort documents
+    filtered.sort((a, b) => {
+      let comparison = 0;
       
-      setDocuments([newDoc, ...documents]);
-      setNewDocTitle('');
-      setNewDocType('note');
-      setIsCreatingDoc(false);
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'created':
+          // Simple string comparison for dates in DD.MM.YYYY format
+          comparison = a.created.localeCompare(b.created);
+          break;
+        case 'modified':
+          comparison = a.modified.localeCompare(b.modified);
+          break;
+        case 'size':
+          // Extract numeric size value from string like "150 KB"
+          const sizeA = parseInt(a.size.split(' ')[0]);
+          const sizeB = parseInt(b.size.split(' ')[0]);
+          comparison = sizeA - sizeB;
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    setFilteredDocuments(filtered);
+  }, [documents, selectedCategory, searchQuery, sortBy, sortDirection]);
+
+  // Handle document selection
+  const toggleDocumentSelection = (id) => {
+    if (selectedDocs.includes(id)) {
+      setSelectedDocs(selectedDocs.filter(docId => docId !== id));
     } else {
-      setIsCreatingDoc(true);
+      setSelectedDocs([...selectedDocs, id]);
     }
   };
-  
-  // Obsługa AI analizy dokumentu
-  const handleAnalyzeWithAI = (docId) => {
-    setIsAnalyzing(true);
+
+  // Handle select all documents
+  const toggleSelectAll = () => {
+    if (selectedDocs.length === filteredDocuments.length) {
+      setSelectedDocs([]);
+    } else {
+      setSelectedDocs(filteredDocuments.map(doc => doc.id));
+    }
+  };
+
+  // Handle document deletion
+  const handleDeleteDocuments = () => {
+    setDocuments(documents.filter(doc => !selectedDocs.includes(doc.id)));
+    setSelectedDocs([]);
+    setShowDeleteModal(false);
+  };
+
+  // Toggle document favorite status
+  const toggleFavorite = (id) => {
+    setDocuments(documents.map(doc => 
+      doc.id === id ? { ...doc, favorite: !doc.favorite } : doc
+    ));
+  };
+
+  // Handle document creation
+  const handleCreateDocument = () => {
+    if (!newDocumentName) return;
     
-    // Znajdź wybrany dokument
+    const newDocument = {
+      id: documents.length + 1,
+      name: newDocumentName,
+      type: newDocumentType,
+      category: selectedTemplate ? selectedTemplate.category : 'templates',
+      created: new Date().toLocaleDateString('pl-PL'),
+      modified: new Date().toLocaleDateString('pl-PL'),
+      size: '0 KB',
+      author: 'Jan Kowalski',
+      status: 'draft',
+      tags: [],
+      favorite: false,
+      aiGenerated: showAIOptions,
+      shared: false,
+      icon: <FileText size={20} className="text-purple-500" />
+    };
+    
+    setDocuments([newDocument, ...documents]);
+    setNewDocumentName('');
+    setSelectedTemplate(null);
+    setNewDocumentType('text');
+    setShowCreateModal(false);
+    setShowAIOptions(false);
+  };
+
+  // Simulate AI document analysis
+  const analyzeDocument = (docId) => {
     const doc = documents.find(d => d.id === docId);
-    setSelectedDocument(doc);
+    if (!doc) return;
     
-    // Symulacja przetwarzania AI
+    setIsDocumentAnalyzing(true);
+    setDocumentAnalysis(null);
+    
+    // Simulate API call delay
     setTimeout(() => {
-      const analysisTypes = [
-        'Analiza semantyczna',
-        'Wyciąganie kluczowych informacji',
-        'Analiza tonacji',
-        'Analiza prawna',
-        'Sprawdzanie spójności'
-      ];
-      
-      // Generowanie animacji analizy
-      const analyzeSequentially = async () => {
-        for (let i = 0; i < analysisTypes.length; i++) {
-          setAiInsights({
-            progress: ((i + 1) / analysisTypes.length) * 100,
-            currentTask: analysisTypes[i],
-            completed: false
-          });
-          // Czekaj od 600 do 1500ms dla każdego kroku
-          await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 900));
-        }
-        
-        // Po zakończeniu analizy
-        const insights = {
-          summary: generateSummary(doc),
-          keywords: generateKeywords(doc),
-          suggestions: generateSuggestions(doc),
-          sentiment: generateSentiment(doc),
-          relatedDocs: findRelatedDocuments(doc, documents.filter(d => d.id !== doc.id)),
-          readability: calculateReadabilityScore(doc),
-          textStructure: analyzeTextStructure(doc),
-          legalConsistency: doc.type === 'contract' ? analyzeLegalConsistency(doc) : null,
-          completionStatus: checkCompletion(doc),
-          risk: assessRiskLevel(doc)
-        };
-        
-        setAiInsights({
-          ...insights,
-          progress: 100,
-          currentTask: 'Analiza zakończona',
-          completed: true
-        });
-        
-        setIsAnalyzing(false);
-        setShowDocPreview(true);
+      const mockAnalysis = {
+        documentName: doc.name,
+        summary: "Ten dokument zawiera standardową umowę z klientem zgodną z obowiązującymi przepisami.",
+        keyPoints: [
+          "Umowa zawiera standardowe klauzule dotyczące poufności",
+          "Termin realizacji: 30 dni od podpisania",
+          "Wartość umowy: 50,000 PLN",
+          "Warunki płatności: 14 dni od wystawienia faktury"
+        ],
+        sentimentAnalysis: "Neutralny",
+        readabilityScore: 73,
+        suggestions: [
+          "Można dodać klauzulę dotyczącą ochrony danych osobowych",
+          "Warto zaktualizować paragraf dotyczący kar umownych",
+          "Proponuję dodać odniesienie do obowiązujących regulacji branżowych"
+        ],
+        similarDocuments: [
+          { id: 2, name: "Umowa z klientem 2", similarity: "87%" },
+          { id: 4, name: "Umowa z klientem 4", similarity: "72%" }
+        ]
       };
       
-      analyzeSequentially();
-    }, 500);
+      setDocumentAnalysis(mockAnalysis);
+      setIsDocumentAnalyzing(false);
+    }, 2000);
   };
-  
-  // Funkcje generujące "sztuczną inteligencję"
-  
-  // Generowanie podsumowania dokumentu
-  const generateSummary = (doc) => {
-    const summaries = {
-      contract: 'Umowa określa warunki współpracy między stronami, definiując zakres usług, terminy płatności oraz zobowiązania obu stron. Dokument zawiera klauzule poufności oraz warunki rozwiązania umowy.',
-      report: 'Raport przedstawia analizę wyników za ostatni kwartał, pokazując wzrost przychodów o 15% w porównaniu do poprzedniego kwartału. Zawiera też prognozę na kolejny okres oraz rekomendacje dotyczące strategii rozwoju.',
-      note: 'Notatka dokumentuje główne punkty omówione podczas spotkania, w tym plany strategiczne na najbliższe 6 miesięcy, przydzielone zadania oraz terminy ich realizacji.',
-      proposal: 'Oferta przedstawia szczegółowy zakres współpracy, proponowane rozwiązania oraz harmonogram wdrożenia. Zawiera również informacje o kosztach i potencjalnych korzyściach dla obu stron.',
-      letter: 'List wyraża zainteresowanie nawiązaniem współpracy w ramach projektu, przedstawiając wstępne założenia oraz proponowane następne kroki.',
-      invoice: 'Faktura dokumentuje transakcję sprzedaży usług, zawierając szczegółowy wykaz pozycji, stawki VAT oraz terminy płatności.'
-    };
+
+  // Handle AI generation request
+  const handleAIGenerate = (e) => {
+    e.preventDefault();
+    if (!aiPrompt) return;
     
-    return summaries[doc.type] || 'Dokument zawiera istotne informacje biznesowe wymagające dalszej analizy.';
-  };
-  
-  // Generowanie słów kluczowych
-  const generateKeywords = (doc) => {
-    const keywordsByType = {
-      contract: ['umowa', 'współpraca', 'zobowiązania', 'terminy', 'płatności', 'poufność'],
-      report: ['analiza', 'wyniki', 'kwartał', 'wzrost', 'prognozy', 'rekomendacje'],
-      note: ['spotkanie', 'strategia', 'zadania', 'terminy', 'decyzje'],
-      proposal: ['oferta', 'współpraca', 'rozwiązania', 'harmonogram', 'koszty', 'korzyści'],
-      letter: ['list', 'zainteresowanie', 'projekt', 'współpraca', 'założenia'],
-      invoice: ['faktura', 'VAT', 'płatność', 'usługi', 'termin']
-    };
+    setIsAILoading(true);
     
-    // Połącz domyślne słowa kluczowe z tagami dokumentu
-    const baseKeywords = keywordsByType[doc.type] || ['dokument', 'biznes', 'informacja'];
-    const combinedKeywords = [...new Set([...baseKeywords, ...(doc.tags || [])])];
-    
-    // Wylosuj od 4 do 7 słów kluczowych
-    const count = 4 + Math.floor(Math.random() * 4);
-    const shuffled = combinedKeywords.sort(() => 0.5 - Math.random());
-    
-    return shuffled.slice(0, count);
-  };
-  
-  // Generowanie sugestii
-  const generateSuggestions = (doc) => {
-    const commonSuggestions = [
-      'Rozważ dodanie spisu treści dla lepszej nawigacji.',
-      'Dokument można skrócić o około 15% bez utraty kluczowych informacji.',
-      'Dodaj więcej wizualnych elementów dla lepszego zrozumienia.'
-    ];
-    
-    const typeSpecificSuggestions = {
-      contract: [
-        'Sekcja dotycząca kar umownych wymaga doprecyzowania.',
-        'Rozważ dodanie klauzuli o rozwiązywaniu sporów.',
-        'Terminy płatności mogą być zbyt restrykcyjne dla klienta.'
-      ],
-      report: [
-        'Dodaj więcej danych porównawczych z poprzednimi okresami.',
-        'Sekcja wniosków mogłaby być bardziej rozbudowana.',
-        'Rozważ dodanie analizy SWOT dla pełniejszego obrazu.'
-      ],
-      note: [
-        'Dodaj informacje o osobach odpowiedzialnych za poszczególne zadania.',
-        'Ustal konkretne terminy dla działań follow-up.',
-        'Uwzględnij więcej szczegółów dotyczących dyskutowanych tematów.'
-      ],
-      proposal: [
-        'Podkreśl mocniej unikalne korzyści oferty względem konkurencji.',
-        'Dodaj więcej szczegółów dotyczących procesu implementacji.',
-        'Rozważ dodanie referencji lub studiów przypadku.'
-      ],
-      letter: [
-        'Skonkretyzuj dalsze kroki i terminy.',
-        'Dodaj więcej informacji o potencjalnych korzyściach współpracy.',
-        'Zakończenie listu mogłoby być bardziej bezpośrednie.'
-      ],
-      invoice: [
-        'Upewnij się, że wszystkie pozycje mają odpowiednie opisy.',
-        'Rozważ dodanie szczegółów dotyczących metod płatności.',
-        'Dodaj informacje o rabatach za wcześniejszą płatność.'
-      ]
-    };
-    
-    // Wybierz sugestie specyficzne dla typu dokumentu
-    const specificSuggestions = typeSpecificSuggestions[doc.type] || [];
-    
-    // Połącz sugestie i wybierz losowo 2-4 z nich
-    const allSuggestions = [...commonSuggestions, ...specificSuggestions];
-    const count = 2 + Math.floor(Math.random() * 3);
-    
-    return allSuggestions
-      .sort(() => 0.5 - Math.random())
-      .slice(0, count);
-  };
-  
-  // Generowanie analizy tonacji
-  const generateSentiment = (doc) => {
-    const sentiments = [
-      { label: 'Formalny', value: 75 + Math.floor(Math.random() * 20) },
-      { label: 'Profesjonalny', value: 60 + Math.floor(Math.random() * 30) },
-      { label: 'Pozytywny', value: 40 + Math.floor(Math.random() * 40) },
-      { label: 'Przekonujący', value: 30 + Math.floor(Math.random() * 60) },
-      { label: 'Techniczny', value: 20 + Math.floor(Math.random() * 70) }
-    ];
-    
-    // Modyfikuj tonację na podstawie typu dokumentu
-    const adjustedSentiments = sentiments.map(sentiment => {
-      let adjustment = 0;
+    // Simulate AI generation delay
+    setTimeout(() => {
+      const generatedName = `AI: ${aiPrompt.substring(0, 25)}${aiPrompt.length > 25 ? '...' : ''}`;
       
-      switch (doc.type) {
-        case 'contract':
-          if (sentiment.label === 'Formalny') adjustment = 15;
-          if (sentiment.label === 'Techniczny') adjustment = 10;
+      const newDocument = {
+        id: documents.length + 1,
+        name: generatedName,
+        type: 'ai-generated',
+        category: 'templates',
+        created: new Date().toLocaleDateString('pl-PL'),
+        modified: new Date().toLocaleDateString('pl-PL'),
+        size: `${Math.floor(Math.random() * 200) + 100} KB`,
+        author: 'Asystent AI',
+        status: 'draft',
+        tags: ['AI', 'automatyczny'],
+        favorite: false,
+        aiGenerated: true,
+        shared: false,
+        icon: <BrainCircuit size={20} className="text-purple-500" />
+      };
+      
+      setDocuments([newDocument, ...documents]);
+      setAiPrompt('');
+      setIsAILoading(false);
+      setShowAIModal(false);
+    }, 3000);
+  };
+
+  // Handle AI suggestion action
+  const handleAISuggestionAction = (action) => {
+    setIsAILoading(true);
+    setAiSuggestionOpen(false);
+    
+    // Simulate AI processing
+    setTimeout(() => {
+      switch(action) {
+        case 'update_contracts':
+          // Simulate updating contracts
+          setDocuments(documents.map(doc => 
+            doc.category === 'contracts' ? 
+              { ...doc, modified: new Date().toLocaleDateString('pl-PL'), status: 'approved' } : 
+              doc
+          ));
           break;
-        case 'proposal':
-          if (sentiment.label === 'Przekonujący') adjustment = 20;
-          if (sentiment.label === 'Pozytywny') adjustment = 15;
+        case 'organize_documents':
+          // Simulate categorizing documents
+          setDocuments(documents.map(doc => 
+            doc.category === 'all' ? 
+              { ...doc, category: doc.type === 'contract' ? 'contracts' : 
+                          doc.type === 'report' ? 'reports' : 'letters' } : 
+              doc
+          ));
           break;
-        case 'report':
-          if (sentiment.label === 'Profesjonalny') adjustment = 15;
-          if (sentiment.label === 'Techniczny') adjustment = 20;
+        case 'generate_report':
+          // Simulate generating a report
+          const newReport = {
+            id: documents.length + 1,
+            name: `Raport miesięczny ${new Date().toLocaleString('pl-PL', { month: 'long' })} 2025`,
+            type: 'report',
+            category: 'reports',
+            created: new Date().toLocaleDateString('pl-PL'),
+            modified: new Date().toLocaleDateString('pl-PL'),
+            size: '320 KB',
+            author: 'Asystent AI',
+            status: 'draft',
+            tags: ['raport', 'miesięczny', 'AI'],
+            favorite: false,
+            aiGenerated: true,
+            shared: false,
+            icon: <FileText size={20} className="text-green-500" />
+          };
+          setDocuments([newReport, ...documents]);
           break;
         default:
           break;
       }
       
-      // Upewnij się, że wartość nie przekracza 100
-      const newValue = Math.min(sentiment.value + adjustment, 99);
-      return { ...sentiment, value: newValue };
-    });
-    
-    return adjustedSentiments;
+      // Show a new suggestion after completing an action
+      setActiveSuggestions([aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)]]);
+      setAiSuggestionOpen(true);
+      setIsAILoading(false);
+    }, 2000);
   };
-  
-  // Znajdowanie powiązanych dokumentów
-  const findRelatedDocuments = (doc, allDocs) => {
-    // Symulacja znajdowania powiązanych dokumentów
-    // W prawdziwej implementacji można by użyć algortymów NLP
-    
-    // Znajdź dokumenty o tym samym typie
-    const sameTypeDocuments = allDocs.filter(d => d.type === doc.type);
-    
-    // Znajdź dokumenty z podobnymi tagami
-    const docsWithSimilarTags = allDocs.filter(d => {
-      if (!d.tags || !doc.tags) return false;
-      return d.tags.some(tag => doc.tags.includes(tag));
-    });
-    
-    // Połącz wyniki, usuń duplikaty i ogranicz do 3 dokumentów
-    const combinedResults = [...sameTypeDocuments, ...docsWithSimilarTags];
-    const uniqueResults = Array.from(new Set(combinedResults.map(d => d.id)))
-      .map(id => combinedResults.find(d => d.id === id));
-    
-    return uniqueResults.slice(0, 3);
-  };
-  
-  // Ocena czytelności
-  const calculateReadabilityScore = (doc) => {
-    // Symulacja oceny czytelności
-    let baseScore;
-    
-    switch (doc.type) {
-      case 'contract':
-        baseScore = 35 + Math.floor(Math.random() * 20); // Trudniejszy
-        break;
-      case 'report':
-        baseScore = 45 + Math.floor(Math.random() * 25);
-        break;
-      case 'note':
-        baseScore = 65 + Math.floor(Math.random() * 20); // Łatwiejszy
-        break;
-      case 'proposal':
-        baseScore = 55 + Math.floor(Math.random() * 25);
-        break;
-      default:
-        baseScore = 50 + Math.floor(Math.random() * 30);
-    }
-    
-    // Dokonaj korekty na podstawie liczby słów
-    if (doc.wordCount > 2000) {
-      baseScore -= 10; // Dłuższe dokumenty zazwyczaj trudniejsze
-    } else if (doc.wordCount < 500) {
-      baseScore += 10; // Krótsze dokumenty zazwyczaj łatwiejsze
-    }
-    
-    // Upewnij się, że wynik jest między 0 a 100
-    return Math.max(0, Math.min(100, baseScore));
-  };
-  
-  // Analiza struktury tekstu
-  const analyzeTextStructure = (doc) => {
-    // Symulacja analizy struktury
-    const structureElements = [
-      { type: 'Nagłówki', count: Math.ceil(doc.wordCount / 400) },
-      { type: 'Akapity', count: Math.ceil(doc.wordCount / 100) },
-      { type: 'Listy', count: Math.floor(doc.wordCount / 500) },
-      { type: 'Tabele', count: Math.floor(doc.wordCount / 800) },
-      { type: 'Grafiki', count: Math.floor(doc.wordCount / 1000) }
-    ];
-    
-    // Modyfikacje na podstawie typu dokumentu
-    if (doc.type === 'report') {
-      structureElements.find(el => el.type === 'Tabele').count += 2;
-      structureElements.find(el => el.type === 'Grafiki').count += 3;
-    } else if (doc.type === 'contract') {
-      structureElements.find(el => el.type === 'Listy').count += 2;
-    }
-    
-    return structureElements;
-  };
-  
-  // Analiza spójności prawnej (dla umów)
-  const analyzeLegalConsistency = (doc) => {
-    return {
-      overallConsistency: 75 + Math.floor(Math.random() * 20),
-      potentialIssues: [
-        'Niespójne użycie terminów w sekcji 3.2 i 5.1.',
-        'Brak jasnego określenia jurysdykcji w przypadku sporów.',
-        'Niejasne warunki dotyczące wypowiedzenia umowy.'
-      ].sort(() => 0.5 - Math.random()).slice(0, 1 + Math.floor(Math.random() * 2))
-    };
-  };
-  
-  // Sprawdzenie kompletności dokumentu
-  const checkCompletion = (doc) => {
-    // Symulacja sprawdzania kompletności
-    const requiredSections = {
-      contract: ['Strony umowy', 'Przedmiot umowy', 'Warunki płatności', 'Okres obowiązywania', 'Podpisy'],
-      report: ['Wprowadzenie', 'Metodologia', 'Wyniki', 'Wnioski', 'Rekomendacje'],
-      proposal: ['Streszczenie', 'Rozwiązanie', 'Harmonogram', 'Koszty', 'O firmie'],
-      note: ['Data i miejsce', 'Uczestnicy', 'Omówione tematy', 'Wnioski', 'Następne kroki'],
-      invoice: ['Dane sprzedawcy', 'Dane nabywcy', 'Pozycje', 'Kwota', 'Termin płatności'],
-      letter: ['Nagłówek', 'Treść główna', 'Zakończenie', 'Podpis']
-    }[doc.type] || ['Wprowadzenie', 'Treść główna', 'Zakończenie'];
-    
-    // Losowo oznacz niektóre sekcje jako brakujące lub niekompletne
-    const completionStatus = requiredSections.map(section => {
-      const rand = Math.random();
-      if (rand > 0.8) {
-        return { section, status: 'missing', message: 'Brakująca sekcja' };
-      } else if (rand > 0.6) {
-        return { section, status: 'incomplete', message: 'Wymaga uzupełnienia' };
-      } else {
-        return { section, status: 'complete', message: 'Kompletna' };
-      }
-    });
-    
-    return {
-      completionPercentage: Math.floor(completionStatus.filter(s => s.status === 'complete').length / completionStatus.length * 100),
-      sections: completionStatus
-    };
-  };
-  
-  // Ocena poziomu ryzyka dokumentu
-  const assessRiskLevel = (doc) => {
-    // Symulacja oceny ryzyka - przydatne szczególnie dla umów
-    let baseRisk;
-    
-    switch (doc.type) {
-      case 'contract':
-        baseRisk = { level: 'Średnie', score: 40 + Math.floor(Math.random() * 30) };
-        break;
-      case 'report':
-        baseRisk = { level: 'Niskie', score: 10 + Math.floor(Math.random() * 30) };
-        break;
-      case 'proposal':
-        baseRisk = { level: 'Niskie', score: 20 + Math.floor(Math.random() * 20) };
-        break;
-      default:
-        baseRisk = { level: 'Bardzo niskie', score: 5 + Math.floor(Math.random() * 15) };
-    }
-    
-    // Dostosuj poziom na podstawie wyniku punktowego
-    if (baseRisk.score > 60) {
-      baseRisk.level = 'Wysokie';
-    } else if (baseRisk.score > 40) {
-      baseRisk.level = 'Średnie';
-    } else if (baseRisk.score > 20) {
-      baseRisk.level = 'Niskie';
-    } else {
-      baseRisk.level = 'Bardzo niskie';
-    }
-    
-    // Dodaj potencjalne kwestie ryzyka
-    const potentialRiskFactors = {
-      contract: [
-        'Niejasne warunki odpowiedzialności',
-        'Brak klauzuli o poufności',
-        'Niewłaściwe określenie jurysdykcji',
-        'Niejednoznaczne warunki rozwiązania umowy',
-        'Problematyczne warunki płatności'
-      ],
-      report: [
-        'Nieaktualne dane',
-        'Niekompletna analiza konkurencji',
-        'Brak źródeł dla kluczowych twierdzeń',
-        'Zbyt optymistyczne prognozy'
-      ],
-      proposal: [
-        'Nierealistyczny harmonogram',
-        'Niejasne określenie zakresu prac',
-        'Potencjalne przekroczenie budżetu',
-        'Brak jasnych kryteriów sukcesu'
-      ]
-    }[doc.type] || [
-      'Niedostateczna szczegółowość',
-      'Potencjalne problemy z interpretacją',
-      'Brak ważnych informacji'
-    ];
-    
-    // Losowo wybierz 0-2 czynników ryzyka
-    const numFactors = baseRisk.score > 30 ? (1 + Math.floor(Math.random() * 2)) : 0;
-    const selectedFactors = potentialRiskFactors
-      .sort(() => 0.5 - Math.random())
-      .slice(0, numFactors);
-    
-    return {
-      risk: baseRisk,
-      factors: selectedFactors
-    };
-  };
-  
-  // Filtrowanie dokumentów na podstawie wyszukiwania i filtrów
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
-    const matchesType = selectedDocType === 'all' || doc.type === selectedDocType;
-    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus;
-    return matchesSearch && matchesType && matchesStatus;
-  });
-  
-  // Sortowanie dokumentów
-  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
-    const dateA = new Date(a.lastModified.split('.').reverse().join('-'));
-    const dateB = new Date(b.lastModified.split('.').reverse().join('-'));
-    
-    switch (sortOrder) {
-      case 'newest':
-        return dateB - dateA;
-      case 'oldest':
-        return dateA - dateB;
-      case 'alphabetical':
-        return a.title.localeCompare(b.title);
-      case 'type':
-        return a.type.localeCompare(b.type);
-      default:
-        return dateB - dateA;
-    }
-  });
-  
-  // Obsługa usuwania dokumentu
-  const handleDeleteDocument = (docId) => {
-    if (window.confirm('Czy na pewno chcesz usunąć ten dokument?')) {
-      setDocuments(documents.filter(doc => doc.id !== docId));
-      if (selectedDocument && selectedDocument.id === docId) {
-        setSelectedDocument(null);
-        setShowDocPreview(false);
-      }
-    }
-  };
-  
-  // Obsługa zaznaczania dokumentów do działań zbiorczych
-  const handleSelectDocument = (docId) => {
-    if (selectedDocs.includes(docId)) {
-      setSelectedDocs(selectedDocs.filter(id => id !== docId));
-    } else {
-      setSelectedDocs([...selectedDocs, docId]);
-    }
-  };
-  
-  // Obsługa działań zbiorczych
-  const handleBulkAction = (action) => {
-    if (selectedDocs.length === 0) {
-      alert('Nie wybrano żadnych dokumentów');
-      return;
-    }
-    
-    switch (action) {
-      case 'delete':
-        if (window.confirm(`Czy na pewno chcesz usunąć ${selectedDocs.length} wybranych dokumentów?`)) {
-          setDocuments(documents.filter(doc => !selectedDocs.includes(doc.id)));
-          setSelectedDocs([]);
-        }
-        break;
-      case 'tag':
-        const tag = prompt('Podaj tag, który chcesz dodać do wybranych dokumentów:');
-        if (tag && tag.trim()) {
-          setDocuments(documents.map(doc => {
-            if (selectedDocs.includes(doc.id)) {
-              const updatedTags = [...(doc.tags || [])];
-              if (!updatedTags.includes(tag.trim())) {
-                updatedTags.push(tag.trim());
-              }
-              return { ...doc, tags: updatedTags };
-            }
-            return doc;
-          }));
-          setSelectedDocs([]);
-        }
-        break;
-      case 'analyze':
-        alert(`Analiza zbiorcza dla ${selectedDocs.length} dokumentów rozpoczęta.`);
-        // Tutaj można by dodać bardziej rozbudowaną funkcjonalność analizy zbiorczej
-        setTimeout(() => {
-          alert('Analiza zbiorcza zakończona. Wyniki dostępne w sekcji raportów.');
-        }, 2000);
-        setSelectedDocs([]);
-        break;
-      default:
-        break;
-    }
-  };
-  
-  // Renderowanie statusu dokumentu
-  const renderStatus = (status) => {
-    const statusStyles = {
-      draft: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-700 dark:text-gray-300' },
-      review: { bg: 'bg-yellow-100 dark:bg-yellow-900 dark:bg-opacity-30', text: 'text-yellow-800 dark:text-yellow-300' },
-      approved: { bg: 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30', text: 'text-green-800 dark:text-green-300' },
-      published: { bg: 'bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30', text: 'text-blue-800 dark:text-blue-300' },
-      rejected: { bg: 'bg-red-100 dark:bg-red-900 dark:bg-opacity-30', text: 'text-red-800 dark:text-red-300' },
-      archived: { bg: 'bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30', text: 'text-purple-800 dark:text-purple-300' }
-    };
-    
-    const style = statusStyles[status] || statusStyles.draft;
-    const statusName = documentStatuses.find(s => s.id === status)?.name || status;
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs ${style.bg} ${style.text}`}>
-        {statusName}
-      </span>
-    );
-  };
-  
-  // Renderowanie typu dokumentu
-  const renderDocumentType = (type) => {
-    const docType = documentTypes.find(t => t.id === type);
-    return docType ? docType.name.replace('Wszystkie ', '') : type;
-  };
-  
-  // Renderowanie tagów dokumentu
-  const renderTags = (tags) => {
-    if (!tags || tags.length === 0) return null;
-    
-    return (
-      <div className="flex flex-wrap gap-1 mt-1">
-        {tags.map((tag, index) => (
-          <span 
-            key={index} 
-            className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300 rounded"
-          >
-            #{tag}
+
+  // Render status badge based on document status
+  const renderStatusBadge = (status) => {
+    switch(status) {
+      case 'approved':
+        return (
+          <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300 rounded-full text-xs flex items-center">
+            <CheckCircle size={12} className="mr-1" />
+            Zatwierdzony
           </span>
-        ))}
-      </div>
-    );
+        );
+      case 'pending':
+        return (
+          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300 rounded-full text-xs flex items-center">
+            <Clock size={12} className="mr-1" />
+            Oczekujący
+          </span>
+        );
+      case 'draft':
+        return (
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300 rounded-full text-xs flex items-center">
+            <Edit size={12} className="mr-1" />
+            Szkic
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">
+            {status}
+          </span>
+        );
+    }
   };
-  
-  // Renderowanie wskaźnika postępu analizy AI
-  const renderAnalysisProgress = () => {
-    if (!aiInsights) return null;
-    
-    return (
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-sm">{aiInsights.currentTask}</span>
-          <span className="text-sm">{Math.round(aiInsights.progress)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div 
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${aiInsights.progress}%` }}
-          ></div>
-        </div>
-      </div>
-    );
-  };
-  
-  // Renderowanie wykresu tonacji
-  const renderSentimentChart = () => {
-    if (!aiInsights || !aiInsights.sentiment) return null;
-    
-    return (
-      <div className="space-y-2">
-        {aiInsights.sentiment.map((item, index) => (
-          <div key={index} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>{item.label}</span>
-              <span>{item.value}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full"
-                style={{ width: `${item.value}%` }}
-              ></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  // Renderowanie kompletności dokumentu
-  const renderCompletionStatus = () => {
-    if (!aiInsights || !aiInsights.completionStatus) return null;
-    
-    const { completionPercentage, sections } = aiInsights.completionStatus;
-    
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <span>Kompletność dokumentu:</span>
-          <span className={`font-medium ${
-            completionPercentage > 80 ? 'text-green-500' : 
-            completionPercentage > 50 ? 'text-yellow-500' : 
-            'text-red-500'
-          }`}>{completionPercentage}%</span>
-        </div>
-        
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-3">
-          <div 
-            className={`h-2 rounded-full ${
-              completionPercentage > 80 ? 'bg-green-500' : 
-              completionPercentage > 50 ? 'bg-yellow-500' : 
-              'bg-red-500'
-            }`}
-            style={{ width: `${completionPercentage}%` }}
-          ></div>
-        </div>
-        
-        <div className="space-y-2 mt-2">
-          {sections.map((item, index) => (
-            <div key={index} className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${
-                item.status === 'complete' ? 'bg-green-500' : 
-                item.status === 'incomplete' ? 'bg-yellow-500' : 
-                'bg-red-500'
-              }`}></div>
-              <span className="text-sm">{item.section}</span>
-              <span className="text-xs ml-auto text-gray-500">{item.message}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-  
-  // Renderowanie oceny ryzyka
-  const renderRiskAssessment = () => {
-    if (!aiInsights || !aiInsights.risk) return null;
-    
-    const { risk, factors } = aiInsights.risk;
-    
-    const riskColor = 
-      risk.level === 'Wysokie' ? 'text-red-500' : 
-      risk.level === 'Średnie' ? 'text-yellow-500' : 
-      'text-green-500';
-    
-    return (
-      <div>
-        <div className="flex justify-between items-center">
-          <span>Poziom ryzyka:</span>
-          <span className={`font-medium ${riskColor}`}>{risk.level}</span>
-        </div>
-        
-        {factors && factors.length > 0 && (
-          <div className="mt-3">
-            <p className="text-sm font-medium mb-1">Potencjalne czynniki ryzyka:</p>
-            <ul className="text-sm space-y-1">
-              {factors.map((factor, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-red-500 mr-2">•</span>
-                  <span>{factor}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  };
-  
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      {/* Nagłówek strony */}
-      <header className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <FileText size={24} className="text-blue-500 mr-2" />
-              <h1 className="text-xl font-bold">Dokumenty AI</h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
-              >
-                {darkMode ? '🌞' : '🌙'}
-              </button>
-              
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center text-white">
-                  JK
-                </div>
-                <span className="ml-2">Jan Kowalski</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      {/* Główna treść */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Tytuł strony i akcje */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
-          <h2 className="text-2xl font-semibold">Zarządzanie dokumentami</h2>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleCreateDocument()}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white`}
-            >
-              <Plus size={16} />
-              <span>Nowy dokument</span>
-            </button>
-            
-            <button
-              onClick={() => setShowBulkActions(!showBulkActions)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                darkMode ? 
-                (showBulkActions ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600') : 
-                (showBulkActions ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100')
-              }`}
-            >
-              <FileText size={16} />
-              <span>Działania zbiorowe</span>
-            </button>
-            
-            <button
-              onClick={() => alert('Implementacja ładowania dokumentów')}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                darkMode ? 
-                'bg-gray-700 text-white hover:bg-gray-600' : 
-                'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              <Upload size={16} />
-              <span>Importuj</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Formularz tworzenia dokumentu */}
-        {isCreatingDoc && (
-          <div className={`p-4 rounded-lg mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-            <h3 className="font-semibold mb-4">Utwórz nowy dokument</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Tytuł dokumentu</label>
-                <input
-                  type="text"
-                  placeholder="Wprowadź tytuł dokumentu"
-                  value={newDocTitle}
-                  onChange={(e) => setNewDocTitle(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Typ dokumentu</label>
-                <select
-                  value={newDocType}
-                  onChange={(e) => setNewDocType(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                  }`}
-                >
-                  {documentTypes.filter(t => t.id !== 'all').map(type => (
-                    <option key={type.id} value={type.id}>{type.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setIsCreatingDoc(false)}
-                  className={`px-4 py-2 rounded-lg ${
-                    darkMode ? 
-                    'bg-gray-700 text-white hover:bg-gray-600' : 
-                    'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                  }`}
-                >
-                  Anuluj
-                </button>
-                <button
-                  onClick={handleCreateDocument}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                  disabled={!newDocTitle.trim()}
-                >
-                  Utwórz
-                </button>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-500 mt-2">lub skorzystaj z szablonów AI:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                  <button
-                    className={`p-3 rounded-lg flex items-center gap-2 ${
-                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                    onClick={() => {
-                      setNewDocTitle('Umowa o współpracy - AI');
-                      setNewDocType('contract');
-                    }}
-                  >
-                    <Zap size={16} className="text-purple-500" />
-                    <span>Umowa o współpracy</span>
-                  </button>
-                  <button
-                    className={`p-3 rounded-lg flex items-center gap-2 ${
-                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                    onClick={() => {
-                      setNewDocTitle('Raport miesięczny - AI');
-                      setNewDocType('report');
-                    }}
-                  >
-                    <Zap size={16} className="text-purple-500" />
-                    <span>Raport miesięczny</span>
-                  </button>
-                  <button
-                    className={`p-3 rounded-lg flex items-center gap-2 ${
-                      darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                    onClick={() => {
-                      setNewDocTitle('Oferta handlowa - AI');
-                      setNewDocType('proposal');
-                    }}
-                  >
-                    <Zap size={16} className="text-purple-500" />
-                    <span>Oferta handlowa</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Akcje zbiorcze */}
-        {showBulkActions && (
-          <div className={`p-4 rounded-lg mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Działania zbiorowe</h3>
-              <span className="text-sm">{selectedDocs.length} wybranych dokumentów</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => handleBulkAction('delete')}
-                disabled={selectedDocs.length === 0}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  selectedDocs.length === 0 ? 'opacity-50 cursor-not-allowed ' : ''
-                } ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white`}
-              >
-                <Trash2 size={16} />
-                <span>Usuń wybrane</span>
-              </button>
-              
-              <button
-                onClick={() => handleBulkAction('tag')}
-                disabled={selectedDocs.length === 0}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  selectedDocs.length === 0 ? 'opacity-50 cursor-not-allowed ' : ''
-                } ${
-                  darkMode ? 
-                  'bg-gray-700 text-white hover:bg-gray-600' : 
-                  'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                <Tag size={16} />
-                <span>Dodaj tag</span>
-              </button>
-              
-              <button
-                onClick={() => handleBulkAction('analyze')}
-                disabled={selectedDocs.length === 0}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  selectedDocs.length === 0 ? 'opacity-50 cursor-not-allowed ' : ''
-                } ${darkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'} text-white`}
-              >
-                <BrainCircuit size={16} />
-                <span>Analiza AI</span>
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Wyszukiwanie i filtry */}
-        <div className={`p-4 rounded-lg mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-          <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
-            {/* Pole wyszukiwania */}
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Szukaj w dokumentach..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-9 pr-3 py-2 border rounded-lg w-full ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-              />
-              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-            </div>
-            
-            {/* Przycisk filtrów */}
-            <button 
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                darkMode ? 
-                (showFilters ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600') : 
-                (showFilters ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100')
-              }`}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter size={16} />
-              <span>Filtry</span>
-            </button>
-            
-            {/* Przycisk sortowania */}
-            <div className="relative">
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className={`pl-3 pr-8 py-2 border rounded-lg appearance-none ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                }`}
-              >
-                <option value="newest">Najnowsze</option>
-                <option value="oldest">Najstarsze</option>
-                <option value="alphabetical">Alfabetycznie</option>
-                <option value="type">Typ dokumentu</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+    <div className={`min-h-screen ${darkMode ? 'dark-mode bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header section */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Dokumenty</h1>
+            <p className="text-gray-500 dark:text-gray-400">Zarządzaj, twórz i analizuj dokumenty z pomocą AI</p>
           </div>
           
-          {/* Rozwinięte filtry */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Typ dokumentu</label>
-                  <select
-                    value={selectedDocType}
-                    onChange={(e) => setSelectedDocType(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                  >
-                    {documentTypes.map(type => (
-                      <option key={type.id} value={type.id}>{type.name}</option>
-                    ))}
-                  </select>
-                </div>
+          <div className="flex space-x-3">
+            {selectedDocs.length > 0 ? (
+              <>
+                <button
+                  className="p-2 rounded-lg bg-red-500 text-white flex items-center hover:bg-red-600"
+                  onClick={() => setShowDeleteModal(true)}
+                >
+                  <Trash2 size={16} className="mr-1" />
+                  <span>Usuń ({selectedDocs.length})</span>
+                </button>
                 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                  >
-                    {documentStatuses.map(status => (
-                      <option key={status.id} value={status.id}>{status.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <button
+                  className="p-2 rounded-lg bg-blue-500 text-white flex items-center hover:bg-blue-600"
+                  onClick={() => setShowShareModal(true)}
+                >
+                  <Share2 size={16} className="mr-1" />
+                  <span>Udostępnij</span>
+                </button>
                 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Autor</label>
-                  <select
-                    className={`w-full px-3 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                  >
-                    <option value="all">Wszyscy autorzy</option>
-                    <option value="me">Tylko moje</option>
-                    <option value="ai">Wygenerowane przez AI</option>
-                  </select>
+                <button
+                  className="p-2 rounded-lg bg-green-500 text-white flex items-center hover:bg-green-600"
+                >
+                  <Download size={16} className="mr-1" />
+                  <span>Pobierz</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="p-2 rounded-lg bg-purple-500 text-white flex items-center hover:bg-purple-600"
+                  onClick={() => setShowAIModal(true)}
+                >
+                  <BrainCircuit size={16} className="mr-1" />
+                  <span>AI Asystent</span>
+                </button>
+                
+                <button
+                  className="p-2 rounded-lg bg-blue-500 text-white flex items-center hover:bg-blue-600"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <Plus size={16} className="mr-1" />
+                  <span>Nowy dokument</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar/Categories */}
+          <div className={`${isSidebarOpen ? 'w-full lg:w-64' : 'w-full lg:w-12'} transition-all duration-300 ease-in-out`}>
+            <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 ${isSidebarOpen ? 'block' : 'hidden lg:block'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Kategorie</h2>
+                <button 
+                  className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <ul className="space-y-2">
+                {categories.map(category => (
+                  <li key={category.id}>
+                    <button
+                      className={`w-full flex items-center p-2 rounded-md ${
+                        selectedCategory === category.id 
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300' 
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      <span className="mr-2">{category.icon}</span>
+                      <span>{category.name}</span>
+                      {category.id === 'contracts' && (
+                        <span className="ml-auto bg-blue-500 text-white rounded-full text-xs px-2">5</span>
+                      )}
+                      {category.id === 'reports' && (
+                        <span className="ml-auto bg-green-500 text-white rounded-full text-xs px-2">5</span>
+                      )}
+                      {category.id === 'letters' && (
+                        <span className="ml-auto bg-yellow-500 text-white rounded-full text-xs px-2">5</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold mb-3">Niedawne tagi</h3>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-2 py-1 rounded-md text-xs flex items-center">
+                    <Tag size={12} className="mr-1" />
+                    umowa
+                  </span>
+                  <span className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-2 py-1 rounded-md text-xs flex items-center">
+                    <Tag size={12} className="mr-1" />
+                    raport
+                  </span>
+                  <span className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-2 py-1 rounded-md text-xs flex items-center">
+                    <Tag size={12} className="mr-1" />
+                    klient
+                  </span>
+                  <span className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-2 py-1 rounded-md text-xs flex items-center">
+                    <Tag size={12} className="mr-1" />
+                    finanse
+                  </span>
                 </div>
               </div>
               
-              <div className="mt-4 flex justify-end space-x-2">
-                <button 
-                  className={`px-3 py-1.5 rounded ${
-                    darkMode ? 
-                    'bg-gray-700 text-white hover:bg-gray-600' : 
-                    'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedDocType('all');
-                    setSelectedStatus('all');
-                  }}
-                >
-                  Wyczyść filtry
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center text-sm font-medium">
+                  <HelpCircle size={14} className="mr-1" />
+                  Pomoc i wsparcie
                 </button>
               </div>
             </div>
-          )}
-        </div>
-        
-        {/* Główna siatka treści */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Lewy panel - lista dokumentów */}
-          <div className={`lg:col-span-2 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">Twoje dokumenty</h3>
-              <span className="text-sm text-gray-500">
-                {filteredDocuments.length} {filteredDocuments.length === 1 ? 'dokument' : 
-                 filteredDocuments.length < 5 ? 'dokumenty' : 'dokumentów'}
-              </span>
+            
+            {/* Collapsed sidebar toggle (visible only on large screens) */}
+            <button
+              className="hidden lg:block mt-2 p-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              {isSidebarOpen ? <ChevronRight size={18} /> : <Menu size={18} />}
+            </button>
+            
+            {/* Mobile sidebar toggle (visible only on small screens) */}
+            {!isSidebarOpen && (
+              <button
+                className="lg:hidden fixed bottom-4 right-4 p-3 bg-blue-500 text-white rounded-full shadow-lg"
+                onClick={() => setIsSidebarOpen(true)}
+              >
+                <Menu size={20} />
+              </button>
+            )}
+          </div>
+          
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Search and Filters */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Szukaj dokumentów..."
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    className={`p-2 border ${showFilters ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-300 dark:border-gray-600 dark:text-gray-400'} rounded-lg flex items-center hover:bg-gray-100 dark:hover:bg-gray-700`}
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter size={16} className="mr-1" />
+                    <span>Filtry</span>
+                  </button>
+                  
+                  <button
+                    className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => {
+                      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    <SortAsc size={16} style={{ transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none' }} />
+                  </button>
+                  
+                  <button
+                    className={`p-2 border border-gray-300 dark:border-gray-600 rounded-lg ${activeView === 'grid' ? 'bg-blue-500 text-white' : 'text-gray-500 dark:text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
+                    onClick={() => setActiveView('grid')}
+                  >
+                    <div className="flex items-center space-x-0.5">
+                      <div className="w-1.5 h-1.5 rounded-sm bg-current"></div>
+                      <div className="w-1.5 h-1.5 rounded-sm bg-current"></div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    className={`p-2 border border-gray-300 dark:border-gray-600 rounded-lg ${activeView === 'list' ? 'bg-blue-500 text-white' : 'text-gray-500 dark:text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
+                    onClick={() => setActiveView('list')}
+                  >
+                    <div className="flex flex-col items-center space-y-0.5">
+                      <div className="w-3 h-0.5 rounded-sm bg-current"></div>
+                      <div className="w-3 h-0.5 rounded-sm bg-current"></div>
+                      <div className="w-3 h-0.5 rounded-sm bg-current"></div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Expanded filters */}
+              {showFilters && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 dark:text-white">
+                      <option value="all">Wszystkie statusy</option>
+                      <option value="draft">Szkic</option>
+                      <option value="pending">Oczekujący</option>
+                      <option value="approved">Zatwierdzony</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data modyfikacji</label>
+                    <select className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 dark:text-white">
+                      <option value="all">Dowolna data</option>
+                      <option value="today">Dzisiaj</option>
+                      <option value="week">W tym tygodniu</option>
+                      <option value="month">W tym miesiącu</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Autor</label>
+                    <select className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700 dark:text-white">
+                      <option value="all">Wszyscy autorzy</option>
+                      <option value="me">Tylko moje</option>
+                      <option value="ai">Generowane przez AI</option>
+                    </select>
+                  </div>
+                  
+                  <div className="sm:col-span-3 flex justify-end">
+                    <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm mr-2">
+                      Wyczyść filtry
+                    </button>
+                    <button className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
+                      Zastosuj
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Sort options */}
+              <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <span className="mr-2">Sortuj według:</span>
+                <button 
+                  className={`mr-3 ${sortBy === 'name' ? 'font-semibold text-blue-500 dark:text-blue-400' : ''}`}
+                  onClick={() => setSortBy('name')}
+                >
+                  Nazwa
+                </button>
+                <button 
+                  className={`mr-3 ${sortBy === 'modified' ? 'font-semibold text-blue-500 dark:text-blue-400' : ''}`}
+                  onClick={() => setSortBy('modified')}
+                >
+                  Data modyfikacji
+                </button>
+                <button 
+                  className={`mr-3 ${sortBy === 'created' ? 'font-semibold text-blue-500 dark:text-blue-400' : ''}`}
+                  onClick={() => setSortBy('created')}
+                >
+                  Data utworzenia
+                </button>
+                <button 
+                  className={`${sortBy === 'size' ? 'font-semibold text-blue-500 dark:text-blue-400' : ''}`}
+                  onClick={() => setSortBy('size')}
+                >
+                  Rozmiar
+                </button>
+              </div>
             </div>
             
-            {sortedDocuments.length > 0 ? (
-              <div className="space-y-3">
-                {sortedDocuments.map(doc => (
-                  <div 
-                    key={doc.id} 
-                    className={`p-4 rounded-lg cursor-pointer border ${
-                      selectedDocument && selectedDocument.id === doc.id ? 
-                      'border-blue-500' : 
-                      darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleAnalyzeWithAI(doc.id)}
+            {/* Document Display */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+              {/* Document count and select all */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Pokazuje {filteredDocuments.length} z {documents.length} dokumentów
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0}
+                    onChange={toggleSelectAll}
+                  />
+                  <span className="text-sm">Zaznacz wszystkie</span>
+                </div>
+              </div>
+              
+              {filteredDocuments.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText size={48} className="mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Brak dokumentów</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Nie znaleziono dokumentów pasujących do wybranych kryteriów
+                  </p>
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCategory('all');
+                    }}
                   >
-                    <div className="flex items-start">
-                      {showBulkActions && (
-                        <div className="mt-1 mr-3">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedDocs.includes(doc.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleSelectDocument(doc.id);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
+                    Wyczyść filtry
+                  </button>
+                </div>
+              ) : activeView === 'grid' ? (
+                // Grid View
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredDocuments.map(doc => (
+                    <div 
+                      key={doc.id}
+                      className={`border ${selectedDocs.includes(doc.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20' : 'border-gray-200 dark:border-gray-700'} rounded-lg p-4 hover:shadow-md transition-shadow relative`}
+                    >
+                      {/* Selection checkbox */}
+                      <div className="absolute top-2 right-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedDocs.includes(doc.id)}
+                          onChange={() => toggleDocumentSelection(doc.id)}
+                          className="h-4 w-4"
+                        />
+                      </div>
+                      
+                      {/* Document icon and name */}
+                      <div className="flex items-center mb-3">
+                        {doc.icon}
+                        <h3 className="font-medium ml-2 truncate">{doc.name}</h3>
+                      </div>
+                      
+                      {/* Document metadata */}
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        <p className="flex items-center mb-1">
+                          <Calendar size={14} className="mr-1" />
+                          <span>Zmodyfikowano: {doc.modified}</span>
+                        </p>
+                        <p className="flex items-center">
+                          <Users size={14} className="mr-1" />
+                          <span>{doc.author}</span>
+                        </p>
+                      </div>
+                      
+                      {/* Status badge and size */}
+                      <div className="flex items-center justify-between mb-3">
+                        {renderStatusBadge(doc.status)}
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{doc.size}</span>
+                      </div>
+                      
+                      {/* AI generated badge */}
+                      {doc.aiGenerated && (
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:bg-opacity-30 dark:text-purple-300 px-1.5 py-0.5 rounded text-xs flex items-center">
+                            <Zap size={10} className="mr-0.5" />
+                            AI
+                          </span>
                         </div>
                       )}
                       
-                      <div className="flex-grow">
-                        <div className="flex items-center mb-1">
-                          <FileText size={18} className="mr-2 text-blue-500 flex-shrink-0" />
-                          <h4 className="font-medium">{doc.title}</h4>
-                          {doc.aiGenerated && (
-                            <span className="ml-2 px-1.5 py-0.5 text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:bg-opacity-30 dark:text-purple-300 rounded">
-                              AI
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="text-sm text-gray-500 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="flex items-center">
-                            <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300">
-                              {renderDocumentType(doc.type)}
-                            </span>
-                          </span>
-                          <span>{renderStatus(doc.status)}</span>
-                          <span>Zmodyfikowano: {doc.lastModified}</span>
-                        </div>
-                        
-                        {renderTags(doc.tags)}
-                      </div>
-                      
-                      <div className="flex space-x-1 ml-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            alert(`Edycja dokumentu: ${doc.title}`);
-                          }}
-                          className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                      {/* Actions */}
+                      <div className="flex border-t border-gray-200 dark:border-gray-700 pt-3 mt-2">
+                        <button 
+                          className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 mr-2"
+                          onClick={() => analyzeDocument(doc.id)}
                         >
-                          <Edit size={16} />
+                          <Search size={16} />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDocument(doc.id);
-                          }}
-                          className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                        <button 
+                          className="text-gray-500 hover:text-yellow-500 dark:text-gray-400 dark:hover:text-yellow-400 mr-2"
+                          onClick={() => toggleFavorite(doc.id)}
                         >
+                          <Star size={16} fill={doc.favorite ? 'currentColor' : 'none'} />
+                        </button>
+                        <button className="text-gray-500 hover:text-green-500 dark:text-gray-400 dark:hover:text-green-400 mr-2">
+                          <Download size={16} />
+                        </button>
+                        <button className="text-gray-500 hover:text-purple-500 dark:text-gray-400 dark:hover:text-purple-400 mr-2">
+                          <Share2 size={16} />
+                        </button>
+                        <button className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
                           <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                  <FileText size={24} className="text-gray-400" />
+                  ))}
                 </div>
-                <h3 className="text-lg font-medium mb-1">Nie znaleziono dokumentów</h3>
-                <p className="text-gray-500 mb-4">Tworzenie nowego dokumentu lub zmień filry wyszukiwania</p>
-                <button
-                  onClick={() => handleCreateDocument()}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Utwórz nowy dokument
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {/* Prawy panel - podgląd dokumentu lub analiza */}
-          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4`}>
-            {isAnalyzing ? (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-semibold flex items-center">
-                    <BrainCircuit size={18} className="mr-2 text-blue-500" />
-                    Analiza dokumentu AI
-                  </h3>
-                </div>
-                
-                {renderAnalysisProgress()}
-                
-                {selectedDocument && (
-                  <div className="mb-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700">
-                    <h4 className="font-medium mb-1">{selectedDocument.title}</h4>
-                    <div className="text-sm text-gray-500">
-                      <p>Typ: {renderDocumentType(selectedDocument.type)}</p>
-                      <p>Status: {documentStatuses.find(s => s.id === selectedDocument.status)?.name}</p>
-                      <p>Liczba słów: {selectedDocument.wordCount}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {!aiInsights?.completed ? (
-                  <div className="text-center py-6">
-                    <div className="animate-pulse flex flex-col items-center justify-center">
-                      <div className="rounded-full bg-blue-400 dark:bg-blue-600 h-12 w-12 flex items-center justify-center mb-4">
-                        <BrainCircuit size={24} className="text-white" />
-                      </div>
-                      <p>AI analizuje twój dokument...</p>
-                      <p className="text-sm text-gray-500 mt-1">To zajmie tylko chwilę</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <h4 className="font-medium mb-3">Wyniki analizy AI</h4>
-                    
-                    <div className="space-y-6">
-                      {/* Podsumowanie */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Podsumowanie</h5>
-                        <p className="text-sm">{aiInsights.summary}</p>
-                      </div>
-                      
-                      {/* Słowa kluczowe */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Słowa kluczowe</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {aiInsights.keywords.map((keyword, index) => (
-                            <span 
-                              key={index} 
-                              className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300 rounded-full"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Tonacja */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Analiza tonacji</h5>
-                        {renderSentimentChart()}
-                      </div>
-                      
-                      {/* Czytelność */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Czytelność</h5>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">Wynik</span>
-                          <span className="text-sm font-medium">{aiInsights.readability}/100</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              aiInsights.readability > 70 ? 'bg-green-500' : 
-                              aiInsights.readability > 40 ? 'bg-yellow-500' : 
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${aiInsights.readability}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          {aiInsights.readability > 70 ? 'Bardzo dobra czytelność' : 
-                           aiInsights.readability > 40 ? 'Średnia czytelność' : 
-                           'Niska czytelność - rozważ uproszczenie'}
-                        </p>
-                      </div>
-                      
-                      {/* Sugestie */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Sugestie usprawnień</h5>
-                        <div className="space-y-2">
-                          {aiInsights.suggestions.map((suggestion, index) => (
-                            <div 
-                              key={index} 
-                              className="p-2 text-sm rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-20 dark:border-yellow-900 dark:text-yellow-200"
-                            >
-                              {suggestion}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Kompletność */}
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500 mb-2">Kompletność dokumentu</h5>
-                        {renderCompletionStatus()}
-                      </div>
-                      
-                      {/* Ocena ryzyka */}
-                      {selectedDocument && selectedDocument.type === 'contract' && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-500 mb-2">Ocena ryzyka</h5>
-                          {renderRiskAssessment()}
-                        </div>
-                      )}
-                      
-                      {/* Powiązane dokumenty */}
-                      {aiInsights.relatedDocs && aiInsights.relatedDocs.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-500 mb-2">Powiązane dokumenty</h5>
-                          <div className="space-y-2">
-                            {aiInsights.relatedDocs.map(doc => (
-                              <div 
-                                key={doc.id} 
-                                className={`p-2 rounded-lg cursor-pointer border ${
-                                  darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                                onClick={() => handleAnalyzeWithAI(doc.id)}
-                              >
-                                <div className="flex items-center">
-                                  <FileText size={14} className="mr-2 text-blue-500" />
-                                  <span className="text-sm font-medium">{doc.title}</span>
-                                </div>
+              ) : (
+                // List View
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0}
+                            onChange={toggleSelectAll}
+                            className="mr-2"
+                          />
+                          Nazwa
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Autor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Data modyfikacji
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Rozmiar
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Akcje
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {filteredDocuments.map(doc => (
+                        <tr 
+                          key={doc.id}
+                          className={selectedDocs.includes(doc.id) ? 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}
+                        >
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedDocs.includes(doc.id)}
+                                onChange={() => toggleDocumentSelection(doc.id)}
+                                className="mr-2"
+                              />
+                              <div className="flex items-center">
+                                {doc.icon}
+                                <span className="ml-2 font-medium">{doc.name}</span>
+                                {doc.aiGenerated && (
+                                  <span className="ml-2 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:bg-opacity-30 dark:text-purple-300 px-1.5 py-0.5 rounded text-xs flex items-center">
+                                    <Zap size={10} className="mr-0.5" />
+                                    AI
+                                  </span>
+                                )}
+                                {doc.favorite && (
+                                  <Star size={16} className="ml-2 text-yellow-500" fill="currentColor" />
+                                )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {renderStatusBadge(doc.status)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {doc.author}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {doc.modified}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {doc.size}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button 
+                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                              onClick={() => analyzeDocument(doc.id)}
+                            >
+                              <Search size={16} />
+                            </button>
+                            <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                              <Edit size={16} />
+                            </button>
+                            <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                              <Download size={16} />
+                            </button>
+                            <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                              <Share2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            
+            {/* Document Analysis Panel (shown when a document is being analyzed) */}
+            {(isDocumentAnalyzing || documentAnalysis) && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 border-l-4 border-blue-500">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <BrainCircuit size={20} className="mr-2 text-blue-500" />
+                    Analiza AI dokumentu
+                  </h3>
+                  <button 
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    onClick={() => {
+                      setIsDocumentAnalyzing(false);
+                      setDocumentAnalysis(null);
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                
+                {isDocumentAnalyzing ? (
+                  <div className="flex flex-col items-center py-6">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                    <p className="text-gray-500 dark:text-gray-400">Analizowanie dokumentu...</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">To zajmie tylko chwilę</p>
+                  </div>
+                ) : documentAnalysis && (
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-medium mb-2">Podsumowanie</h4>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">{documentAnalysis.summary}</p>
                     </div>
                     
-                    <div className="mt-6 pt-4 border-t dark:border-gray-700">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            alert('Implementacja eksportu analizy do PDF');
-                          }}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded ${
-                            darkMode ? 
-                            'bg-gray-700 text-white hover:bg-gray-600' : 
-                            'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          <Download size={14} />
-                          <span className="text-sm">Eksportuj</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            alert('Implementacja udostępniania analizy');
-                          }}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded ${
-                            darkMode ? 
-                            'bg-gray-700 text-white hover:bg-gray-600' : 
-                            'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          <Share2 size={14} />
-                          <span className="text-sm">Udostępnij</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowDocPreview(false);
-                            setSelectedDocument(null);
-                            setAiInsights(null);
-                          }}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded ${
-                            darkMode ? 
-                            'bg-blue-600 text-white hover:bg-blue-700' : 
-                            'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                        >
-                          <RefreshCw size={14} />
-                          <span className="text-sm">Nowa analiza</span>
-                        </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium mb-2">Kluczowe punkty</h4>
+                        <ul className="space-y-2">
+                          {documentAnalysis.keyPoints.map((point, index) => (
+                            <li key={index} className="flex text-sm">
+                              <ArrowUpRight size={16} className="mr-2 text-blue-500 flex-shrink-0" />
+                              <span className="text-gray-700 dark:text-gray-300">{point}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
+                      
+                      <div>
+                        <h4 className="font-medium mb-2">Sugestie usprawnień</h4>
+                        <ul className="space-y-2">
+                          {documentAnalysis.suggestions.map((suggestion, index) => (
+                            <li key={index} className="flex text-sm">
+                              <Zap size={16} className="mr-2 text-purple-500 flex-shrink-0" />
+                              <span className="text-gray-700 dark:text-gray-300">{suggestion}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg">
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Wydźwięk dokumentu</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{documentAnalysis.sentimentAnalysis}</p>
+                      </div>
+                      
+                      <div className="p-3 bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg">
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Czytelność</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{documentAnalysis.readabilityScore}/100</p>
+                      </div>
+                      
+                      <div className="p-3 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 rounded-lg">
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Podobne dokumenty</p>
+                        <div className="space-y-1">
+                          {documentAnalysis.similarDocuments.map((doc, index) => (
+                            <p key={index} className="font-medium text-gray-900 dark:text-white text-xs flex items-center justify-between">
+                              <span className="truncate">{doc.name}</span>
+                              <span className="ml-2">{doc.similarity}</span>
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center">
+                        <Zap size={16} className="mr-2" />
+                        Zastosuj sugestie AI
+                      </button>
                     </div>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="h-full flex flex-col justify-center items-center py-10">
-                <div className="w-20 h-20 mb-4 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
-                  <BrainCircuit size={32} className="text-blue-500" />
-                </div>
-                <h3 className="text-lg font-medium mb-2 text-center">Analiza dokumentów AI</h3>
-                <p className="text-sm text-gray-500 text-center mb-6 max-w-xs">
-                  Wybierz dokument z listy, aby rozpocząć analizę AI i uzyskać cenne spostrzeżenia.
-                </p>
-                <div className="space-y-3 w-full max-w-xs">
-                  <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Search size={16} className="text-blue-500" />
-                      <span className="font-medium">Analiza semantyczna</span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      AI zidentyfikuje główne tematy i słowa kluczowe w dokumencie.
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileCheck size={16} className="text-green-500" />
-                      <span className="font-medium">Ocena jakości i ryzyka</span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Sprawdź kompletność dokumentu i potencjalne ryzyka.
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sparkles size={16} className="text-yellow-500" />
-                      <span className="font-medium">Sugestie usprawnień</span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Otrzymaj propozycje zmian, które poprawią jakość dokumentu.
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
           </div>
         </div>
-      </main>
+      </div>
+      
+      {/* Modals */}
+      
+      {/* Delete confirmation modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center text-red-500 mb-4">
+              <AlertCircle size={24} className="mr-2" />
+              <h3 className="text-lg font-medium">Potwierdź usunięcie</h3>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Czy na pewno chcesz usunąć {selectedDocs.length} {selectedDocs.length === 1 ? 'dokument' : selectedDocs.length < 5 ? 'dokumenty' : 'dokumentów'}? 
+              Tej operacji nie można cofnąć.
+            </p>
+            
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 text-gray-500 mr-2"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Anuluj
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={handleDeleteDocuments}
+              >
+                Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Share modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Udostępnij dokumenty</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                onClick={() => setShowShareModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Użytkownicy
+              </label>
+              <input 
+                type="text"
+                placeholder="Wprowadź email użytkownika..."
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Uprawnienia
+              </label>
+              <select className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                <option value="view">Podgląd</option>
+                <option value="comment">Komentowanie</option>
+                <option value="edit">Edycja</option>
+              </select>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Link do udostępnienia
+              </label>
+              <div className="flex">
+                <input 
+                  type="text"
+                  value="https://example.com/shared/documents/xyz123"
+                  readOnly
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-l-lg dark:bg-gray-700 dark:text-white"
+                />
+                <button className="bg-gray-200 dark:bg-gray-600 p-2 rounded-r-lg">
+                  <Copy size={16} />
+                </button>
+              </div>
+              <div className="flex items-center mt-2">
+                <input type="checkbox" id="allow-anyone" className="mr-2" />
+                <label htmlFor="allow-anyone" className="text-sm text-gray-600 dark:text-gray-300">
+                  Zezwól na dostęp każdemu z linkiem
+                </label>
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 text-gray-500 mr-2"
+                onClick={() => setShowShareModal(false)}
+              >
+                Anuluj
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={() => setShowShareModal(false)}
+              >
+                Udostępnij
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Create document modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Utwórz nowy dokument</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                onClick={() => setShowCreateModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nazwa dokumentu
+              </label>
+              <input 
+                type="text"
+                value={newDocumentName}
+                onChange={(e) => setNewDocumentName(e.target.value)}
+                placeholder="Wprowadź nazwę dokumentu..."
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Typ dokumentu
+              </label>
+              <select 
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                value={newDocumentType}
+                onChange={(e) => setNewDocumentType(e.target.value)}
+              >
+                <option value="text">Dokument tekstowy</option>
+                <option value="contract">Umowa</option>
+                <option value="report">Raport</option>
+                <option value="letter">List</option>
+              </select>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Szablon
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {documentTemplates.map(template => (
+                  <div 
+                    key={template.id}
+                    className={`border ${selectedTemplate && selectedTemplate.id === template.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20' : 'border-gray-200 dark:border-gray-700'} rounded-lg p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500`}
+                    onClick={() => setSelectedTemplate(template)}
+                  >
+                    <div className="mb-2">
+                      {template.icon}
+                    </div>
+                    <span className="text-sm">{template.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mb-6 flex items-center">
+              <input 
+                type="checkbox" 
+                id="use-ai" 
+                className="mr-2"
+                checked={showAIOptions}
+                onChange={() => setShowAIOptions(!showAIOptions)}
+              />
+              <label htmlFor="use-ai" className="flex items-center text-sm">
+                <Zap size={16} className="mr-1 text-purple-500" />
+                Użyj AI do generowania dokumentu
+              </label>
+            </div>
+            
+            {showAIOptions && (
+              <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 rounded-lg">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                  AI pomoże Ci wygenerować treść dokumentu na podstawie wybranego szablonu i wprowadzonych danych.
+                </p>
+                
+                <textarea
+                  placeholder="Opisz, co powinien zawierać dokument..."
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm min-h-20"
+                ></textarea>
+              </div>
+            )}
+            
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 text-gray-500 mr-2"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Anuluj
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
+                onClick={handleCreateDocument}
+                disabled={!newDocumentName}
+              >
+                {showAIOptions ? (
+                  <>
+                    <Zap size={16} className="mr-1" />
+                    Generuj z AI
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} className="mr-1" />
+                    Utwórz
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* AI Assistant Modal */}
+      {showAIModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium flex items-center">
+                <BrainCircuit size={20} className="mr-2 text-purple-500" />
+                Asystent AI
+              </h3>
+              <button
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                onClick={() => setShowAIModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <p className="mb-4 text-gray-600 dark:text-gray-300">
+              Opisz, jaki dokument chcesz wygenerować, a AI stworzy go dla Ciebie.
+            </p>
+            
+            <form onSubmit={handleAIGenerate}>
+              <textarea
+                placeholder="Np. Stwórz umowę o współpracy z firmą XYZ na świadczenie usług marketingowych..."
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white min-h-32 mb-4"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              ></textarea>
+              
+              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <Zap size={16} className="mr-1 text-purple-500" />
+                <span>Podpowiedź: Im bardziej szczegółowy opis, tym lepszy efekt</span>
+              </div>
+              
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="px-4 py-2 text-gray-500 mr-2"
+                  onClick={() => setShowAIModal(false)}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center"
+                  disabled={isAILoading || !aiPrompt}
+                >
+                  {isAILoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Generowanie...
+                    </>
+                  ) : (
+                    <>
+                      <BrainCircuit size={16} className="mr-2" />
+                      Generuj dokument
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* AI Suggestions Popup */}
+      {aiSuggestionOpen && activeSuggestions.length > 0 && (
+        <div className="fixed bottom-4 right-4 max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border-l-4 border-purple-500 z-20">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium flex items-center text-sm">
+              <Zap size={16} className="mr-1 text-purple-500" />
+              Sugestia AI
+            </h4>
+            <button
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              onClick={() => setAiSuggestionOpen(false)}
+            >
+              <X size={16} />
+            </button>
+          </div>
+          
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+            {activeSuggestions[0].description}
+          </p>
+          
+          <div className="flex justify-end">
+            <button
+              className="px-3 py-1 text-gray-500 mr-2 text-sm"
+              onClick={() => setAiSuggestionOpen(false)}
+            >
+              Później
+            </button>
+            <button
+              className="px-3 py-1 bg-purple-500 text-white rounded text-sm flex items-center"
+              onClick={() => handleAISuggestionAction(activeSuggestions[0].action)}
+              disabled={isAILoading}
+            >
+              {isAILoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                  Pracuję...
+                </>
+              ) : (
+                <>
+                  <Zap size={12} className="mr-1" />
+                  Wykonaj
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Loading overlay */}
+      {isAILoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 flex items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+            <span>Asystent AI pracuje...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
