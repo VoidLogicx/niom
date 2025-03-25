@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardCard from '../common/DashboardCard';
 import { ReactComponent as OfficeIcon } from '../../assets/icons/office.svg';
 import { ReactComponent as SalesIcon } from '../../assets/icons/sales.svg';
@@ -55,9 +55,13 @@ const dashboardItems = [
 ];
 
 const Dashboard = () => {
+  const [selectedModule, setSelectedModule] = useState(null);
+
   const handleCardClick = (path) => {
     // Navigation logic would go here
     console.log(`Navigating to: ${path}`);
+    setSelectedModule(path);
+    window.location.href = path;
   };
 
   return (
