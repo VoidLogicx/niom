@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../css/Templates.css';
 import { 
   FileText, 
   Search, 
@@ -21,6 +22,8 @@ import {
   X,
   AlertTriangle
 } from 'lucide-react';
+
+
 
 function Templates({ onCreateDocument, darkMode }) {
   // State variables
