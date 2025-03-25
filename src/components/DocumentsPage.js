@@ -6,6 +6,7 @@ import {
   Users, Clipboard, BarChart2, MessageSquare, Check, 
   Trash2, Edit, Eye, Star, Upload
 } from 'lucide-react';
+import '../css/DocumentsPage.css'
 
 // Komponent główny strony dokumentów
 const DocumentsPage = () => {
@@ -559,8 +560,13 @@ const DocumentsPage = () => {
   };
   
   // Filtrowanie dokumentów na podstawie wyszukiwania i filtrów
-  const filteredDocuments = Array.isArray(documents) ? documents.filter(doc => doc.status !== 'archived') : [];
-
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+    const matchesType = selectedDocType === 'all' || doc.type === selectedDocType;
+    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus;
+    return matchesSearch && matchesType && matchesStatus;
+  });
   
   // Sortowanie dokumentów
   const sortedDocuments = [...filteredDocuments].sort((a, b) => {

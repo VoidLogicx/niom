@@ -6,6 +6,7 @@ import DocumentEditor from './components/DocumentEditor';
 import AIAssistant from './components/AIAssistant';
 import Templates from './components/Templates';
 import DocumentsPage from './components/DocumentsPage';
+import AIAssistantPage from './components/AIAssistantPage';
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
@@ -104,14 +105,20 @@ Dokument "${activeDocument.title}" reguluje zasady współpracy między stronami
       <main className="main-content">
         {activePage === 'dashboard' && (
           <Dashboard 
-            documents={DocumentsPage} 
+            documents={documents} 
             onOpenDocument={handleOpenDocument} 
           />
+        )}
+        {activePage === 'documentspage' && (
+          <DocumentsPage />
         )}
         {activePage === 'templates' && (
           <Templates 
             onCreateDocument={handleCreateDocument} 
           />
+        )}
+        {activePage === 'ai' && (
+          <AIAssistantPage />
         )}
         {activePage === 'editor' && activeDocument && (
           <DocumentEditor 
